@@ -19,9 +19,10 @@ log = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-BITRIX_BASE   = f"{os.getenv('BITRIX_PORTAL')}/rest/{os.getenv('BITRIX_USER_ID')}/{os.getenv('BITRIX_TOKEN')}"
-GROQ_KEY      = os.getenv("GROQ_API_KEY")
-DB_URL        = os.getenv("Postgres_URL")   # public URL
+BITRIX_BASE    = f"{os.getenv('BITRIX_PORTAL')}/rest/{os.getenv('BITRIX_USER_ID')}/{os.getenv('BITRIX_TOKEN')}"
+GROQ_KEY       = os.getenv("GROQ_API_KEY")
+DB_URL         = os.getenv("Postgres_URL")
+WEBHOOK_TOKEN  = os.getenv("BITRIX_WEBHOOK_TOKEN", "")
 
 groq_client   = groq_sdk.Groq(api_key=GROQ_KEY)
 
@@ -117,6 +118,12 @@ def find_recording_in_lead(lead_id):
 @app.route("/webhook", methods=["POST"])
 def webhook():
     data = request.form.to_dict()
+
+    # Проверка токена Bitrix24
+    if WEBHOOK_TOKEN and data.get("auth[application_token]") != WEBHOOK_TOKEN:
+        log.warning("Неверный токен webhook — запрос отклонён")
+        return jsonify({"ok": False}), 403
+
     event = data.get("event", "")
     log.info(f"Событие: {event} | данные: {list(data.keys())}")
 
