@@ -181,6 +181,10 @@ def process_event(data):
 # ── Запуск ─────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    ensure_table()
+    try:
+        ensure_table()
+        log.info("БД: таблица call_transcripts готова")
+    except Exception as e:
+        log.error(f"Не удалось подключиться к БД при старте: {e}")
     log.info("Сервер запущен. Ожидаю webhook от Bitrix24...")
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
