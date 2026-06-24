@@ -4,7 +4,7 @@ Polling каждые 10 минут проверяет новые звонки у
 Webhook /webhook принимает события от Bitrix24 (резервный канал).
 """
 
-import os, time, logging, requests, psycopg2, threading
+import os, time, logging, requests, psycopg2, threading, subprocess
 from datetime import datetime, timedelta, timezone
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
@@ -127,6 +127,14 @@ def process_call(lead_id, act_id, file_id, call_date, phone, subject):
 
     row_id = save_transcript(lead_id, act_id, file_id, call_date, phone, subject, transcript)
     log.info(f"Сохранено в БД id={row_id} | Лид #{lead_id} | {call_date}")
+
+    # Запускаем аудит конкретной записи в фоне (Project_11)
+    audit_script = "/home/vitaly/ALL_PROJECTS/Project_11/audit.py"
+    subprocess.Popen(
+        ["python3", audit_script, "--id", str(row_id)],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
+    log.info(f"Запущен аудит для id={row_id}")
 
 
 # ── Polling ────────────────────────────────────────────────────────────────────
