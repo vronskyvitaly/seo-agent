@@ -154,20 +154,21 @@ def process_event(data):
         log.warning("Нет lead_id в событии")
         return
 
-    # Ждём пока запись появится в Bitrix (загружается асинхронно, 30-120 сек)
-    time.sleep(60)
+    # Ждём пока запись появится в Bitrix (загружается асинхронно, может занять несколько минут)
+    log.info(f"Лид {lead_id}: ждём 2 мин пока запись загрузится в Bitrix...")
+    time.sleep(120)
 
-    # Ищем активность с записью — до 3 попыток с интервалом 60 сек
+    # Ищем активность с записью — до 5 попыток с интервалом 90 сек (итого до ~9.5 мин)
     act = None
-    for attempt in range(3):
+    for attempt in range(5):
         act = find_recording_in_lead(lead_id)
         if act:
             break
-        log.info(f"Лид {lead_id}: запись ещё не появилась, ждём ещё 60 сек (попытка {attempt+1}/3)")
-        time.sleep(60)
+        log.info(f"Лид {lead_id}: запись ещё не появилась, ждём 90 сек (попытка {attempt+1}/5)")
+        time.sleep(90)
 
     if not act:
-        log.warning(f"Лид {lead_id}: запись так и не появилась за 3 мин")
+        log.warning(f"Лид {lead_id}: запись не появилась за ~9.5 мин — пропускаем")
         return
 
     file_id   = act["FILES"][0]["id"]
