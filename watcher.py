@@ -140,17 +140,22 @@ def process_call(lead_id, act_id, file_id, call_date, phone, subject):
 # ── Polling ────────────────────────────────────────────────────────────────────
 
 def poll_new_calls():
-    """Проверяет новые звонки с записью за последние 15 минут у всех менеджеров."""
+    """Проверяет новые звонки с записью за последние 15 минут у всех менеджеров + необработанные лиды."""
     since = (datetime.now(timezone.utc) - timedelta(minutes=15)).strftime("%Y-%m-%dT%H:%M:%S")
     log.info(f"Polling: ищем звонки с {since}")
 
-    # Batch-запрос: лиды всех менеджеров одним вызовом
+    # Batch-запрос: лиды менеджеров + необработанные (STATUS_ID=NEW)
     batch_cmd = {}
     for name, uid in CARGO_MANAGERS.items():
         batch_cmd[f"leads_{uid}"] = (
             f"crm.lead.list?FILTER[ASSIGNED_BY_ID]={uid}"
             f"&FILTER[>DATE_MODIFY]={since}&SELECT[]=ID&ORDER[ID]=DESC&LIMIT=10"
         )
+    # Необработанные лиды — входящие звонки ещё без менеджера
+    batch_cmd["leads_new"] = (
+        f"crm.lead.list?FILTER[STATUS_ID]=NEW"
+        f"&FILTER[>DATE_MODIFY]={since}&SELECT[]=ID&ORDER[ID]=DESC&LIMIT=20"
+    )
 
     try:
         r = requests.post(f"{BITRIX_BASE}/batch", json={"halt": 0, "cmd": batch_cmd}, timeout=30)
@@ -160,9 +165,13 @@ def poll_new_calls():
         return
 
     lead_ids = []
+    seen = set()
     for key, leads in results.items():
         if isinstance(leads, list):
-            lead_ids.extend([l["ID"] for l in leads])
+            for l in leads:
+                if l["ID"] not in seen:
+                    seen.add(l["ID"])
+                    lead_ids.append(l["ID"])
 
     if not lead_ids:
         log.info("Polling: новых лидов нет")
