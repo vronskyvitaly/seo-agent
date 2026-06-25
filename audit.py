@@ -88,7 +88,7 @@ def format_tg_message(row: dict, analysis: dict) -> str:
     call_dt = row["call_date"]
     if call_dt:
         if hasattr(call_dt, "tzinfo") and call_dt.tzinfo is None:
-            call_dt = call_dt.replace(tzinfo=timezone.utc)
+            call_dt = call_dt.replace(tzinfo=MSK)
         call_dt_msk = call_dt.astimezone(MSK)
         date_str = call_dt_msk.strftime("%d.%m.%Y %H:%M МСК")
     else:
