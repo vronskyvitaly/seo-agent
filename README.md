@@ -50,14 +50,14 @@ Bitrix24 (звонок завершён)
 
 ## Деплой
 
-Сервер работает на Coolify по адресу `https://agentseven.tamozhennybrokeragents.ru`.
+Сервер работает на Coolify по адресу `https://agenteleven.tamozhennybrokeragents.ru`.
 
 ```bash
 # Проверить статус
-curl https://agentseven.tamozhennybrokeragents.ru/health
+curl https://agenteleven.tamozhennybrokeragents.ru/health
 
 # Запустить polling вручную
-curl https://agentseven.tamozhennybrokeragents.ru/poll
+curl https://agenteleven.tamozhennybrokeragents.ru/poll
 
 # Запустить аудит вручную (все непросмотренные)
 python3 audit.py
