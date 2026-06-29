@@ -1,7 +1,9 @@
 """
-Webhook-сервер + polling для мониторинга звонков Bitrix24.
-Polling каждые 10 минут проверяет новые звонки у cargo-менеджеров.
-Webhook /webhook принимает события от Bitrix24 (резервный канал).
+call-audit / watcher.py
+Два канала получения звонков из Bitrix24:
+  1. Webhook ONVOXIMPLANTCALLEND — основной, срабатывает сразу после звонка
+  2. Polling каждые 3 минуты — резерв на случай если webhook не пришёл
+После транскрипции сразу запускает audit.py --id <N> → отчёт в Telegram.
 """
 
 import os, time, logging, requests, psycopg2, threading, subprocess
