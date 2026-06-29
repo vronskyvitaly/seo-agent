@@ -223,6 +223,28 @@ def polling_loop():
         time.sleep(180)  # 3 минуты
 
 
+def process_call_by_lead(lead_id: str, phone: str = ""):
+    """Найти последний звонок с записью в лиде и обработать его."""
+    acts = bitrix("crm.activity.list", {
+        "FILTER[OWNER_TYPE_ID]": 1, "FILTER[OWNER_ID]": lead_id, "FILTER[TYPE_ID]": 2,
+        "SELECT[]": ["ID", "START_TIME", "FILES", "SUBJECT", "COMMUNICATIONS"],
+        "ORDER[START_TIME]": "DESC", "LIMIT": 5,
+    })
+    if not isinstance(acts, list):
+        log.warning(f"process_call_by_lead {lead_id}: нет активностей")
+        return
+    for act in acts:
+        if act.get("FILES"):
+            if not phone:
+                for c in act.get("COMMUNICATIONS", []):
+                    phone = c.get("VALUE", "")
+                    break
+            process_call(lead_id, act["ID"], act["FILES"][0]["id"],
+                         act.get("START_TIME"), phone, act.get("SUBJECT", ""))
+            return
+    log.warning(f"process_call_by_lead {lead_id}: звонков с записью не найдено")
+
+
 # ── Webhook endpoint (резервный) ───────────────────────────────────────────────
 
 @app.route("/webhook", methods=["POST"])
@@ -279,6 +301,21 @@ def poll_now():
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"})
+
+
+@app.route("/process-lead", methods=["GET", "POST"])
+def process_lead_endpoint():
+    """Ручная обработка конкретного лида: /process-lead?lead_id=7771"""
+    lead_id = request.args.get("lead_id") or (request.json or {}).get("lead_id")
+    if not lead_id:
+        return jsonify({"ok": False, "error": "lead_id required"}), 400
+    phone = request.args.get("phone", "")
+    threading.Thread(
+        target=process_call_by_lead,
+        args=(str(lead_id), phone),
+        daemon=True
+    ).start()
+    return jsonify({"ok": True, "message": f"Processing lead {lead_id}"})
 
 
 # ── Запуск ─────────────────────────────────────────────────────────────────────
