@@ -102,7 +102,9 @@ def format_tg_message(row: dict, analysis: dict) -> str:
     else:
         lead_link = "нет лида"
 
-    msg = (
+    transcript = (row.get("transcript_raw") or "").strip()
+
+    header = (
         f"{emoji} <b>{label}</b>\n"
         f"\n"
         f"👤 <b>Менеджер:</b> {mgr}\n"
@@ -111,24 +113,42 @@ def format_tg_message(row: dict, analysis: dict) -> str:
         f"🔗 <b>Лид:</b> {lead_link}\n"
         f"\n"
         f"📝 <b>Резюме:</b> {analysis['summary']}\n"
+        f"<i>Причина оценки: {analysis['reason']}</i>\n"
+        f"\n"
+        f"💬 <b>Расшифровка:</b>\n"
+        f"{transcript}\n"
         f"\n"
         f"<i>Причина оценки: {analysis['reason']}</i>"
     )
-    return msg
+    return header
 
 
 def send_tg(text: str) -> bool:
     url = f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage"
+    # Telegram лимит — 4096 символов. Разбиваем на части по абзацам.
+    limit = 4096
+    parts = []
+    while len(text) > limit:
+        cut = text.rfind("\n", 0, limit)
+        if cut == -1:
+            cut = limit
+        parts.append(text[:cut])
+        text = text[cut:].lstrip("\n")
+    parts.append(text)
+
     ok_all = True
     for chat_id in TG_RECIPIENTS:
-        r = requests.post(url, json={
-            "chat_id": chat_id,
-            "text": text,
-            "parse_mode": "HTML",
-            "disable_web_page_preview": True,
-        }, timeout=15)
-        if not r.ok:
-            ok_all = False
+        for part in parts:
+            r = requests.post(url, json={
+                "chat_id": chat_id,
+                "text": part,
+                "parse_mode": "HTML",
+                "disable_web_page_preview": True,
+            }, timeout=15)
+            if not r.ok:
+                ok_all = False
+            if len(parts) > 1:
+                time.sleep(0.3)
     return ok_all
 
 
@@ -183,6 +203,7 @@ def run_audit(only_new: bool = True):
             "call_date": call_date,
             "subject": subject,
             "manager_name": extract_manager(subject),
+            "transcript_raw": transcript,
         }
 
         transcript = (transcript or "").strip()
@@ -246,6 +267,7 @@ def run_single(record_id: int):
         "id": rid, "lead_id": lead_id, "lead_url": lead_url,
         "phone": phone, "call_date": call_date, "subject": subject,
         "manager_name": extract_manager(subject),
+        "transcript_raw": transcript,
     }
 
     transcript = (transcript or "").strip()

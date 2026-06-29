@@ -212,13 +212,13 @@ def poll_new_calls():
 
 
 def polling_loop():
-    """Фоновый поток: polling каждые 10 минут."""
+    """Фоновый поток: polling каждые 3 минуты (резерв если webhook не сработал)."""
     while True:
         try:
             poll_new_calls()
         except Exception as e:
             log.error(f"Polling loop ошибка: {e}")
-        time.sleep(600)  # 10 минут
+        time.sleep(180)  # 3 минуты
 
 
 # ── Webhook endpoint (резервный) ───────────────────────────────────────────────
@@ -245,10 +245,10 @@ def process_webhook_event(data):
     phone   = data.get("data[PHONE_NUMBER]", "")
     if not lead_id:
         return
-    log.info(f"Webhook: лид={lead_id}, ждём 2 мин пока появится запись...")
-    time.sleep(120)
-    # После ожидания polling подберёт запись автоматически — или ищем явно
-    for attempt in range(5):
+    # Bitrix24 обрабатывает запись ~15-30 сек после окончания звонка
+    log.info(f"Webhook: лид={lead_id}, ждём 30 сек пока появится запись...")
+    time.sleep(30)
+    for attempt in range(6):
         try:
             acts = bitrix("crm.activity.list", {
                 "FILTER[OWNER_TYPE_ID]": 1, "FILTER[OWNER_ID]": lead_id,
@@ -263,8 +263,8 @@ def process_webhook_event(data):
                         return
         except Exception as e:
             log.warning(f"Webhook поиск записи попытка {attempt+1}: {e}")
-        time.sleep(90)
-    log.warning(f"Webhook: запись для лида {lead_id} не появилась")
+        time.sleep(30)
+    log.warning(f"Webhook: запись для лида {lead_id} не появилась за 3 мин")
 
 
 @app.route("/poll", methods=["GET", "POST"])
