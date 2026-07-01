@@ -411,7 +411,11 @@ def novofon_webhook():
 @app.route("/process-lead", methods=["GET", "POST"])
 def process_lead_endpoint():
     """Ручная обработка конкретного лида: /process-lead?lead_id=7771"""
-    body = request.get_json(silent=True, force=True) or {}
+    try:
+        import json as _json
+        body = _json.loads(request.data) if request.data else {}
+    except Exception:
+        body = {}
     lead_id = request.args.get("lead_id") or body.get("lead_id")
     if not lead_id:
         return jsonify({"ok": False, "error": "lead_id required"}), 400
