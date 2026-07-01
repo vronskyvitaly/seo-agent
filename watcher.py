@@ -333,7 +333,7 @@ def health():
 @app.route("/novofon", methods=["GET", "POST"])
 def novofon_webhook():
     """Новофон: HTTP-уведомление о завершении звонка."""
-    data = request.json or request.form.to_dict()
+    data = request.form.to_dict() or request.get_json(silent=True) or {}
     log.info(f"Новофон webhook: {data}")
 
     phone = data.get("contact_phone_number", "")
