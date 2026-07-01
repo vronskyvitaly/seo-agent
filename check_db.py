@@ -26,11 +26,28 @@ def is_working_hours():
 def get_last_sent_id():
     try:
         return int(open(LAST_ID_FILE).read().strip())
-    except:
+    except FileNotFoundError:
+        # Первый запуск в контейнере — не отправляем всю историю, берём текущий max id
+        try:
+            conn = psycopg2.connect(DB_URL)
+            cur = conn.cursor()
+            cur.execute("SELECT COALESCE(MAX(id), 0) FROM call_transcripts")
+            max_id = cur.fetchone()[0]
+            conn.close()
+            save_last_id(max_id)
+            return max_id
+        except Exception:
+            return 0
+    except Exception:
         return 0
 
 def save_last_id(last_id):
-    open(LAST_ID_FILE, "w").write(str(last_id))
+    try:
+        import os as _os
+        _os.makedirs(_os.path.dirname(LAST_ID_FILE), exist_ok=True)
+        open(LAST_ID_FILE, "w").write(str(last_id))
+    except Exception:
+        pass
 
 def check_db(since_id):
     conn = psycopg2.connect(DB_URL)
