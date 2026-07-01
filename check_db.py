@@ -9,13 +9,13 @@ from datetime import datetime, timezone, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-DB_URL       = "postgres://postgres:trLNB8TjhnFqZwOftVohdJmN8YWsFaIFRE79bFYE9xLCPBYbk4G7l9HwtOe6il66@213.136.66.25:5439/postgres"
+DB_URL       = os.getenv("Postgres_URL") or "postgres://postgres:trLNB8TjhnFqZwOftVohdJmN8YWsFaIFRE79bFYE9xLCPBYbk4G7l9HwtOe6il66@213.136.66.25:5439/postgres"
 SMTP_HOST    = "smtp.yandex.ru"
 SMTP_PORT    = 465
 SMTP_USER    = "office@tamozhennyy.broker"
 SMTP_PASS    = "dtfluobocgfxffde"
 TO_EMAIL     = "vronskyvitaly@mail.ru"
-LAST_ID_FILE = "/tmp/check_db_last_id.txt"
+LAST_ID_FILE = "/app/check_db_last_id.txt"
 
 MSK = timezone(timedelta(hours=3))
 
