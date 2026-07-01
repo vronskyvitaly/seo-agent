@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DB_URL        = "postgres://postgres:trLNB8TjhnFqZwOftVohdJmN8YWsFaIFRE79bFYE9xLCPBYbk4G7l9HwtOe6il66@213.136.66.25:5439/postgres"
+DB_URL        = os.getenv("Postgres_URL") or "postgres://postgres:trLNB8TjhnFqZwOftVohdJmN8YWsFaIFRE79bFYE9xLCPBYbk4G7l9HwtOe6il66@213.136.66.25:5439/postgres"
 CLAUDE_KEY    = os.getenv("CLAUDE_API_KEY")
 CLAUDE_MODEL  = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6")
 TG_TOKEN      = os.getenv("TG_BOT_TOKEN_AUDIT")

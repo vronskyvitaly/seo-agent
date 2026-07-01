@@ -360,11 +360,12 @@ def novofon_webhook():
         log.warning(f"Новофон: нет телефона в данных: {data}")
         return jsonify({"ok": True, "skipped": "no_phone"})
 
-    # Имя менеджера: сначала из employee_info, потом из добавочного номера
-    manager_name = (
-        employee.get("employee_full_name")
-        or EXTENSION_TO_NAME.get(ext)
-    )
+    # employee_full_name может содержать доб. номер (например "703") вместо имени
+    emp_name = employee.get("employee_full_name") or ""
+    if emp_name and emp_name.isdigit():
+        ext = ext or emp_name  # используем как добавочный если ext пустой
+        emp_name = ""
+    manager_name = emp_name or EXTENSION_TO_NAME.get(ext)
     log.info(f"Новофон: звонок завершён. Клиент={phone}, доб.={ext} → {manager_name or 'неизвестен'}")
 
     phone_clean = phone.replace(" ", "").replace("-", "")
