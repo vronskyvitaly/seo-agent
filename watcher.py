@@ -1,5 +1,5 @@
 """
-call-audit / watcher.py
+call-audit / watcher.py v2
 Два канала получения звонков из Bitrix24:
   1. Webhook ONVOXIMPLANTCALLEND — основной, срабатывает сразу после звонка
   2. Polling каждые 3 минуты — резерв на случай если webhook не пришёл
